@@ -4,15 +4,14 @@ An experimental JEV-only agent that operates in the Chrome session already open 
 
 ## Run
 
-Requires Node.js 20+, Chrome 144+, and a TypeSafe API key.
+Requires Node.js 22.16+, Chrome 144+, and a TypeSafe API key.
 
 1. In your running Chrome, open `chrome://inspect/#remote-debugging` and enable remote debugging. Approve Chrome's connection prompt when the agent starts.
-2. Set `TYPESAFE_API_KEY` in your local environment.
+2. Add your key to the ignored `.env` file in this project: `TYPESAFE_API_KEY=your-key`.
 3. Run:
 
 ```powershell
 npm install
-$env:TYPESAFE_API_KEY = '<your key>'
 npm start -- 'Open https://example.com and inspect the page'
 ```
 

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "tsx --test test/*.test.ts",
-    "start": "tsx src/cli.ts",
+    "start": "node --env-file-if-exists=.env --import tsx src/cli.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
