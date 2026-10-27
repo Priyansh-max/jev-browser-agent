@@ -96,7 +96,7 @@ async function startRun(options: AgentOptions): Promise<Run> {
           };
         }),
       });
-      outcome = result.startsWith("JEV judged the task complete.") ? "complete" : "incomplete";
+      outcome = /^(JEV judged the task complete\.|Verified YouTube playback:)/.test(result) ? "complete" : "incomplete";
       event(current, "result", result);
     } catch (error) {
       event(current, "error", error instanceof Error ? error.message : String(error));

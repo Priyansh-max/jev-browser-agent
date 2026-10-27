@@ -1,6 +1,7 @@
 ﻿import { ChromeSession } from "./chrome.js";
 import { approvalReason } from "./approval.js";
 import { JevClient, type Decision } from "./jev.js";
+import { inspectYouTubePlayer } from "./media.js";
 import { actionsFromSnapshot, needsHuman, searchUrl, taskUrl } from "./snapshot.js";
 
 export interface AgentOptions {
@@ -43,6 +44,9 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
   let lastUrl = "";
   const history: string[] = [];
   const markedPages = new Set<number>();
+  let adStartedAt: number | undefined;
+  let adWaitingLogged = false;
+  let mediaSettling = 0;
   try {
     for (let step = 1; step <= options.maxSteps; step++) {
       const pagesBefore = await chrome.pages();
@@ -79,6 +83,33 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
         continue;
       }
 
+      const media = inspectYouTubePlayer(snapshot, task);
+      if (media?.ad) {
+        adStartedAt ??= Date.now();
+        if (Date.now() - adStartedAt > 90_000) return "YouTube's ad did not end within 90 seconds.";
+        if (media.skipUid) {
+          const fresh = inspectYouTubePlayer(await chrome.snapshot(pageId), task);
+          if (fresh?.skipUid) {
+            await chrome.click(pageId, fresh.skipUid);
+            history.push("Skipped a YouTube ad.");
+            log("Skipped a YouTube ad.");
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } else {
+          if (!adWaitingLogged) log("Waiting for an unskippable YouTube ad.");
+          adWaitingLogged = true;
+          await new Promise((resolve) => setTimeout(resolve, 1_500));
+        }
+        step--;
+        continue;
+      }
+      adStartedAt = undefined;
+      adWaitingLogged = false;
+      if (media?.playing && (history.some((item) => item.startsWith("Clicked link ")) ||
+          /\bcurrent\b/i.test(task) || /youtube\.com\/watch\?/.test(start ?? ""))) {
+        return "Verified YouTube playback: " + media.title + ". Final page:\n" + snapshot.slice(0, 2500);
+      }
+
       const actions = actionsFromSnapshot(snapshot);
       offset = Math.min(offset, Math.max(0, actions.length - 1));
       const decision = await jev.decide(task, snapshot, actions, offset, history);
@@ -87,7 +118,16 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
       if (decision.completeProbability >= 0.95 && history.length > 0) {
         return `JEV judged the task complete. Verify the final page in Chrome.\n${snapshot.slice(0, 2500)}`;
       }
-      if (decision.action === "blocked") return `No available action advanced the task. Final page:\n${snapshot.slice(0, 2500)}`;
+      if (decision.action === "blocked") {
+        if (media && mediaSettling++ < 2) {
+          log("Waiting for the YouTube player to settle.");
+          await new Promise((resolve) => setTimeout(resolve, 1_000));
+          step--;
+          continue;
+        }
+        return `No available action advanced the task. Final page:\n${snapshot.slice(0, 2500)}`;
+      }
+      mediaSettling = 0;
       if (decision.action === "next_options") { offset += 180; continue; }
       if (decision.action === "previous_options") { offset = Math.max(0, offset - 180); continue; }
       if (decision.action === "wait") {
