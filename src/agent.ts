@@ -45,7 +45,10 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
     if (!pagesBefore.some((page) => page.id === pageId)) return "The agent tab was closed.";
     let snapshot = await chrome.snapshot(pageId);
     const pageUrl = pagesBefore.find((page) => page.id === pageId)?.url ?? "";
-    if (pageUrl !== lastUrl) offset = 0;
+    if (pageUrl !== lastUrl) {
+      offset = 0;
+      if (lastUrl) history.push(`Observed browser navigation from ${lastUrl} to ${pageUrl}.`);
+    }
     lastUrl = pageUrl;
 
     const humanReason = needsHuman(snapshot);

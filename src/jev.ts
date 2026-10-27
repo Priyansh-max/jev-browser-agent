@@ -57,7 +57,7 @@ export class JevClient {
         questions: {
           goal_complete: {
             type: "noul",
-            instructions: "Does the CURRENT page or browser event directly prove that the entire user task is complete? An attempted click or a planned action does not count.",
+            instructions: "Do the current page and recorded browser events prove the entire task is complete? For a click request, an observed navigation to the clicked link destination counts. A click attempt alone does not count.",
           },
           next_action: {
             type: "choice",
