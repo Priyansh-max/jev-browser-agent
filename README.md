@@ -26,9 +26,9 @@ Give exact form values with repeated `--value Label=exact text` arguments, or en
 
 ## Loop and boundaries
 
-Each step takes a fresh accessibility snapshot, presents up to 180 page actions to JEV, checks the selected element against another fresh snapshot, acts, then observes again. A maximum step count stops repeated loops. Login and CAPTCHA pages pause for manual completion in Chrome. Consequential clicks require confirmation. Browser dialogs are handled explicitly. A failed page gets one reload; repeated action failures stop the run.
+Each step takes a fresh accessibility snapshot, presents up to 180 page actions to JEV, checks the selected element against another fresh snapshot, acts, then observes again. A maximum step count stops repeated loops. If the initial Chrome connection fails, the CLI explains the debugging toggle and retries after you enable it. Login and CAPTCHA pages pause for manual completion in Chrome. Consequential clicks and sensitive form fields require confirmation. Browser dialogs are handled explicitly. A failed page gets one reload; repeated action failures stop the run.
 
-JEV's goal check is a judgment over the browser observation. The final page is shown for user verification. This is an experimental vertical slice, not yet a reliable agent for every website or every task. Tasks that require newly composed prose, complex visual understanding, or unavailable page controls remain unsupported.
+JEV's goal check is a judgment over the browser observation. The final page is shown for user verification. The approval policy currently uses page labels and cannot reliably identify every consequential action. This is an experimental vertical slice, not yet a reliable agent for every website or every task. Tasks that require newly composed prose, complex visual understanding, or unavailable page controls remain unsupported.
 
 Browser page text is sent to TypeSafe as JEV input. The API key, Chrome cookies, snapshots, and local logs are not committed to this repository. Chrome's permission prompt controls access to the existing session.
 

@@ -1,4 +1,5 @@
 ﻿import { ChromeSession } from "./chrome.js";
+import { approvalReason } from "./approval.js";
 import { JevClient } from "./jev.js";
 import { actionsFromSnapshot, needsHuman, searchUrl, taskUrl } from "./snapshot.js";
 
@@ -16,9 +17,6 @@ function matchingValue(label: string, values: Record<string, string>): string | 
   return Object.entries(values).find(([key]) => normalized.includes(key.toLowerCase()))?.[1];
 }
 
-function requiresConfirmation(description: string): boolean {
-  return /\b(delete|remove|submit|send|publish|post|purchase|buy|pay|transfer|place order|confirm|save)\b/i.test(description);
-}
 
 function isFailurePage(snapshot: string): boolean {
   return /ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED|This site can.t be reached|page isn.t responding/i.test(snapshot);
@@ -112,6 +110,12 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
       continue;
     }
 
+    const approval = approvalReason(selected);
+    if (approval) {
+      const reply = await ask(`${approval} Type yes to continue: `);
+      if (reply.trim().toLowerCase() !== "yes") return "Stopped before a sensitive action.";
+    }
+
     try {
       if (["textbox", "searchbox", "combobox"].includes(selected.role)) {
         let value = matchingValue(selected.description, options.values);
@@ -122,10 +126,7 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
         await chrome.fill(pageId, selected.uid, value);
         history.push(`Filled ${selected.description}.`);
       } else {
-        if (requiresConfirmation(selected.description)) {
-          const reply = await ask(`Confirm click on ${selected.description}? Type yes: `);
-          if (reply.trim().toLowerCase() !== "yes") return "Stopped before a consequential action.";
-        }
+
         await chrome.click(pageId, selected.uid);
         history.push(`Clicked ${selected.description}.`);
       }
