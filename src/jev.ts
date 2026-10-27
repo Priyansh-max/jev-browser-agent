@@ -12,11 +12,12 @@ export interface Decision {
   model: string;
   latencyMs: number;
   inputTokens: number;
+  outputTokens: number;
 }
 
 interface JevResponse {
   model?: string;
-  usage?: { input_tokens?: number };
+  usage?: { input_tokens?: number; output_tokens?: number };
   answers?: {
     next_action?: { choice?: string; confidence?: number };
     goal_complete?: { noul?: number };
@@ -79,6 +80,7 @@ export class JevClient {
       model: result.model ?? this.model,
       latencyMs: Math.round(performance.now() - started),
       inputTokens: result.usage?.input_tokens ?? 0,
+      outputTokens: result.usage?.output_tokens ?? 0,
     };
   }
 }

@@ -37,14 +37,14 @@ if (!key) {
   let chrome = new ChromeSession();
   try {
     const args = argumentsForRun(process.argv.slice(2));
-    console.log("Requesting access to your open Chrome session. Approve Chrome's connection prompt.");
+    console.log("Connecting to your open Chrome session.");
     try {
       await chrome.connect();
     } catch {
       const answer = await input.question("In Chrome, enable remote debugging at chrome://inspect/#remote-debugging. Press Enter to retry, or type stop: ");
       if (answer.trim().toLowerCase() === "stop") throw new Error("Chrome connection was not enabled.");
       chrome = new ChromeSession();
-      console.log("Requesting access again. Approve Chrome's connection prompt.");
+      console.log("Retrying the Chrome connection.");
       await chrome.connect();
     }
     const result = await runAgent(chrome, new JevClient(key), {

@@ -6,7 +6,9 @@
   "scripts": {
     "test": "tsx --test test/*.test.ts",
     "start": "node --env-file-if-exists=.env --import tsx src/cli.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "chat": "node --env-file-if-exists=.env --import tsx src/chat.ts",
+    "benchmark": "node --env-file-if-exists=.env --import tsx src/benchmark.ts"
   },
   "keywords": [],
   "author": "",

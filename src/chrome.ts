@@ -70,6 +70,35 @@ export class ChromeSession {
     await this.call("navigate_page", { pageId, type });
   }
 
+  async mark(pageId: number): Promise<void> {
+    await this.call("evaluate_script", {
+      pageId,
+      waitForStableDom: false,
+      function: `() => {
+        let border = document.getElementById("__jev_agent_border__");
+        if (!border) {
+          border = document.createElement("div");
+          border.id = "__jev_agent_border__";
+          border.setAttribute("aria-hidden", "true");
+          Object.assign(border.style, {
+            position: "fixed", inset: "0", border: "5px solid #7c3aed",
+            boxSizing: "border-box", pointerEvents: "none", zIndex: "2147483647",
+          });
+          document.documentElement.appendChild(border);
+        }
+        return true;
+      }`,
+    });
+  }
+
+  async unmark(pageId: number): Promise<void> {
+    await this.call("evaluate_script", {
+      pageId,
+      waitForStableDom: false,
+      function: '() => { document.getElementById("__jev_agent_border__")?.remove(); return true; }',
+    });
+  }
+
   async close(): Promise<void> {
     if (!this.connected) return;
     this.connected = false;
