@@ -69,7 +69,7 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
     const actions = actionsFromSnapshot(snapshot);
     offset = Math.min(offset, Math.max(0, actions.length - 1));
     const decision = await jev.decide(task, snapshot, actions, offset, history);
-    log(`Step ${step}: ${decision.action} (confidence ${decision.confidence.toFixed(2)}, complete ${decision.completeProbability.toFixed(2)}, ${decision.model})`);
+    log(`Step ${step}: ${decision.action} (confidence ${decision.confidence.toFixed(2)}, complete ${decision.completeProbability.toFixed(2)}, ${decision.model}, ${decision.latencyMs} ms, ${decision.inputTokens} input tokens)`);
     if (decision.completeProbability >= 0.95 && history.length > 0) {
       return `JEV judged the task complete. Verify the final page in Chrome.\n${snapshot.slice(0, 2500)}`;
     }

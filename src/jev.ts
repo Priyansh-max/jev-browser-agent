@@ -10,10 +10,13 @@ export interface Decision {
   confidence: number;
   completeProbability: number;
   model: string;
+  latencyMs: number;
+  inputTokens: number;
 }
 
 interface JevResponse {
   model?: string;
+  usage?: { input_tokens?: number };
   answers?: {
     next_action?: { choice?: string; confidence?: number };
     goal_complete?: { noul?: number };
@@ -41,6 +44,7 @@ export class JevClient {
       recent_actions: recent.slice(-6),
       options_shown: `${offset + 1}-${offset + visible.length} of ${actions.length}`,
     };
+    const started = performance.now();
     const response = await fetch("https://api.typesafe.ai/v1/systemone", {
       method: "POST",
       headers: { Authorization: `Bearer ${this.key}`, "Content-Type": "application/json" },
@@ -70,6 +74,8 @@ export class JevClient {
       confidence: result.answers?.next_action?.confidence ?? 0,
       completeProbability: result.answers?.goal_complete?.noul ?? 0,
       model: result.model ?? this.model,
+      latencyMs: Math.round(performance.now() - started),
+      inputTokens: result.usage?.input_tokens ?? 0,
     };
   }
 }
