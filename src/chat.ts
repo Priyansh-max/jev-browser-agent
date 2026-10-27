@@ -67,14 +67,16 @@ async function readySession(): Promise<SessionFile> {
   throw new Error("Chrome connection did not become ready within one minute. Check Chrome's permission prompt.");
 }
 
-function parseRun(args: string[]): { task: string; startUrl?: string; values: Record<string, string>; maxSteps: number } {
+function parseRun(args: string[]): { task: string; startUrl?: string; pageId?: number; values: Record<string, string>; maxSteps: number } {
   const parts: string[] = [];
   const values: Record<string, string> = {};
   let startUrl: string | undefined;
+  let pageId: number | undefined;
   let maxSteps = 30;
   for (let index = 0; index < args.length; index++) {
     const part = args[index]!;
     if (part === "--start") { startUrl = args[++index]; continue; }
+    if (part === "--tab") { pageId = Number(args[++index]); continue; }
     if (part === "--max-steps") { maxSteps = Number(args[++index]); continue; }
     if (part === "--value") {
       const pair = args[++index] ?? "";
@@ -88,7 +90,8 @@ function parseRun(args: string[]): { task: string; startUrl?: string; values: Re
   const task = parts.join(" ").trim();
   if (!task) throw new Error("Provide a task.");
   if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > 100) throw new Error("--max-steps must be 1-100.");
-  return { task, ...(startUrl ? { startUrl } : {}), values, maxSteps };
+  if (pageId !== undefined && (!Number.isInteger(pageId) || pageId < 1)) throw new Error("--tab requires a positive tab ID.");
+  return { task, ...(startUrl ? { startUrl } : {}), ...(pageId ? { pageId } : {}), values, maxSteps };
 }
 
 async function watch(session: SessionFile, id: string): Promise<void> {
@@ -113,10 +116,15 @@ async function main(): Promise<void> {
   if (command === "start") {
     await readySession();
   } else if (command === "run") {
+    const options = parseRun(args);
     const session = await readySession();
-    const result = await request<{ id: string }>(session, "/runs", "POST", parseRun(args));
+    const result = await request<{ id: string }>(session, "/runs", "POST", options);
     console.log(`Run ID: ${result.id}`);
     await watch(session, result.id);
+  } else if (command === "tabs") {
+    const session = await readySession();
+    const tabs = await request<Array<{ id: number; url: string; selected: boolean }>>(session, "/tabs");
+    for (const tab of tabs) console.log(tab.id + ": " + tab.url + (tab.selected ? " [selected]" : ""));
   } else if (command === "watch") {
     if (!args[0]) throw new Error("Provide a run ID.");
     const session = await sessionFile();
@@ -134,13 +142,17 @@ async function main(): Promise<void> {
   } else if (command === "status") {
     const session = await sessionFile();
     console.log(session ? await request<Health>(session, "/health") : "No active session.");
+  } else if (command === "reconnect") {
+    const session = await sessionFile();
+    if (!session) throw new Error("No session to reconnect.");
+    console.log(await request(session, "/connect", "POST"));
   } else if (command === "stop") {
     const session = await sessionFile();
     if (!session) return;
     await request(session, "/stop", "POST");
     console.log("Session stopped.");
   } else {
-    throw new Error("Use: chat start | run <task> | watch <run-id> | answer <run-id> | status | stop");
+    throw new Error("Use: chat start | tabs | run [--tab id] <task> | watch <run-id> | answer <run-id> | status | reconnect | stop");
   }
 }
 

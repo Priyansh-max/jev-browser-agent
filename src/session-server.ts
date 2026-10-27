@@ -130,17 +130,31 @@ const server = createServer(async (req, res) => {
     } else if (req.method === "POST" && url.pathname === "/connect") {
       if (run?.status === "running" || connection === "connecting") json(res, 409, { error: "Session is busy." });
       else { await connect(); json(res, connection === "ready" ? 200 : 503, { connection, connectionError }); }
+    } else if (req.method === "GET" && url.pathname === "/tabs") {
+      if (connection !== "ready") { json(res, 503, { error: connectionError || "Chrome is connecting." }); return; }
+      const pages = await chrome.pages();
+      json(res, 200, pages.map((page) => {
+        try {
+          const parsed = new URL(page.url);
+          parsed.search = "";
+          parsed.hash = "";
+          return { id: page.id, url: parsed.href, selected: page.selected };
+        } catch {
+          return { id: page.id, url: page.url.split(/[?#]/)[0], selected: page.selected };
+        }
+      }));
     } else if (req.method === "POST" && url.pathname === "/runs") {
       if (connection !== "ready") { json(res, 503, { error: connectionError || "Chrome is connecting." }); return; }
       if (run?.status === "running") { json(res, 409, { error: "A run is already active.", id: run.id }); return; }
       const input = await body(req) as Partial<AgentOptions>;
       if (typeof input.task !== "string" || !input.task.trim() ||
           (input.startUrl !== undefined && typeof input.startUrl !== "string") ||
+          (input.pageId !== undefined && (!Number.isInteger(input.pageId) || input.pageId < 1)) ||
           (input.values !== undefined && (typeof input.values !== "object" || input.values === null || Array.isArray(input.values))) ||
           (input.maxSteps !== undefined && (!Number.isInteger(input.maxSteps) || input.maxSteps < 1 || input.maxSteps > 100))) {
         json(res, 400, { error: "Invalid run options." }); return;
       }
-      const current = await startRun({ task: input.task, ...(input.startUrl ? { startUrl: input.startUrl } : {}), values: input.values ?? {}, maxSteps: input.maxSteps ?? 30, ask: async () => "", log: () => {} });
+      const current = await startRun({ task: input.task, ...(input.startUrl ? { startUrl: input.startUrl } : {}), ...(input.pageId ? { pageId: input.pageId } : {}), values: input.values ?? {}, maxSteps: input.maxSteps ?? 30, ask: async () => "", log: () => {} });
       json(res, 202, { id: current.id });
     } else if (req.method === "GET" && url.pathname.startsWith("/runs/")) {
       const id = url.pathname.slice("/runs/".length);

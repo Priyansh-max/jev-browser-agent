@@ -31,10 +31,13 @@ Ask Codex to run a browser task through this project. It can invoke the commands
 npm run chat -- start
 npm run chat -- run 'Open https://example.com and click Learn more'
 npm run chat -- status
+npm run chat -- tabs
+npm run chat -- run 'Click the Help link in the selected tab'
+npm run chat -- run --tab 7 'Click the Orders link in this already-open tab'
 npm run chat -- stop
 ```
 
-The local session holds one Chrome DevTools connection for up to one hour and allows one run at a time. Chrome owns the remote debugging approval: the project cannot grant or extend it. A new connection after expiry or a disconnect may trigger Chrome's own prompt. Only the session owner can call the loopback service with the random token stored in ignored `.runtime/session.json`. It accepts no browser-origin requests. If an action needs approval or exact text, the run pauses and prints a run ID; send a reply with `npm run chat -- answer <run-id> yes`, then `npm run chat -- watch <run-id>`. Omit the final answer argument to read it from standard input.
+A task with an explicit URL opens a new Chrome tab. Without a URL, the runner uses the selected Chrome tab; use the tabs command and --tab <id> to target another existing tab. The local session holds one Chrome DevTools connection for up to one hour and allows one run at a time. Chrome owns the remote debugging approval: the project cannot grant or extend it. A new connection after expiry or a disconnect may trigger Chrome's own prompt. After Chrome restores debugging, `npm run chat -- reconnect` retries the existing session. Only the session owner can call the loopback service with the random token stored in ignored `.runtime/session.json`. It accepts no browser-origin requests. If an action needs approval or exact text, the run pauses and prints a run ID; send a reply with `npm run chat -- answer <run-id> yes`, then `npm run chat -- watch <run-id>`. Omit the final answer argument to read it from standard input.
 
 ## Compare runs
 

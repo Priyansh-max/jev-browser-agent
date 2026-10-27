@@ -7,6 +7,7 @@ import { actionsFromSnapshot, needsHuman, searchUrl, taskUrl } from "./snapshot.
 export interface AgentOptions {
   task: string;
   startUrl?: string;
+  pageId?: number;
   values: Record<string, string>;
   maxSteps: number;
   ask: (message: string) => Promise<string>;
@@ -27,9 +28,14 @@ function isFailurePage(snapshot: string): boolean {
 
 export async function runAgent(chrome: ChromeSession, jev: JevClient, options: AgentOptions): Promise<string> {
   const { task, ask, log } = options;
-  const start = options.startUrl ?? taskUrl(task) ?? searchUrl(task);
+  if (options.pageId !== undefined && options.startUrl) throw new Error("Choose an existing tab or --start, not both.");
+  const start = options.pageId === undefined ? options.startUrl ?? taskUrl(task) ?? searchUrl(task) : undefined;
   let pageId: number;
-  if (start) {
+  if (options.pageId !== undefined) {
+    const chosen = (await chrome.pages()).find((page) => page.id === options.pageId);
+    if (!chosen) throw new Error("The requested Chrome tab is no longer open.");
+    pageId = chosen.id;
+  } else if (start) {
     pageId = await chrome.open(start);
   } else {
     const selected = (await chrome.pages()).find((page) => page.selected);
@@ -106,7 +112,7 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
       adStartedAt = undefined;
       adWaitingLogged = false;
       if (media?.playing && (history.some((item) => item.startsWith("Clicked link ")) ||
-          /\bcurrent\b/i.test(task) || /youtube\.com\/watch\?/.test(start ?? ""))) {
+          options.pageId !== undefined || /\b(?:current|this|existing)\b/i.test(task) || /youtube\.com\/watch\?/.test(start ?? ""))) {
         return "Verified YouTube playback: " + media.title + ". Final page:\n" + snapshot.slice(0, 2500);
       }
 
