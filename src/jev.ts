@@ -31,10 +31,13 @@ export class JevClient {
     const options: ChoiceOption[] = visible.map((action) => ({ key: action.key, description: action.description }));
     options.push(
       { key: "scroll_down", description: "Scroll down to reveal more of this page." },
+      { key: "scroll_up", description: "Scroll up to revisit earlier page content." },
+      { key: "reload", description: "Reload the page if its state is stuck or stale." },
       { key: "go_back", description: "Navigate back to the previous page." },
       { key: "wait", description: "Wait briefly for the current page to update." },
       { key: "blocked", description: "Stop because no listed action advances the task." },
     );
+    if (recent.at(-1)?.startsWith("Filled")) options.push({ key: "press_enter", description: "Submit the focused field with Enter." });
     if (offset > 0) options.push({ key: "previous_options", description: "Inspect the previous set of page actions." });
     if (offset + visible.length < actions.length) options.push({ key: "next_options", description: "Inspect the next set of page actions." });
     const criteria = Object.fromEntries(options.map((option) => [option.key, option.description]));

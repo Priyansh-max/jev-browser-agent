@@ -81,9 +81,19 @@ export async function runAgent(chrome: ChromeSession, jev: JevClient, options: A
       history.push("Waited one second.");
       continue;
     }
-    if (decision.action === "scroll_down") {
-      await chrome.call("press_key", { pageId, key: "PageDown", includeSnapshot: false });
-      history.push("Scrolled down.");
+    if (decision.action === "scroll_down" || decision.action === "scroll_up") {
+      await chrome.call("press_key", { pageId, key: decision.action === "scroll_down" ? "PageDown" : "PageUp", includeSnapshot: false });
+      history.push(decision.action === "scroll_down" ? "Scrolled down." : "Scrolled up.");
+      continue;
+    }
+    if (decision.action === "reload") {
+      await chrome.navigate(pageId, "reload");
+      history.push("Reloaded page.");
+      continue;
+    }
+    if (decision.action === "press_enter") {
+      await chrome.call("press_key", { pageId, key: "Enter", includeSnapshot: false });
+      history.push("Submitted focused field with Enter.");
       continue;
     }
     if (decision.action === "go_back") {
