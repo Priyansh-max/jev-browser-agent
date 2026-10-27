@@ -35,7 +35,7 @@ if (command === "baseline") {
       const codex = metrics.filter((item) => item.taskHash === hash && item.kind === "codex-computer-use").at(-1);
       console.log(JSON.stringify({
         task: hash.slice(0, 12),
-        jev: jev && { durationMs: jev.durationMs, humanWaitMs: jev.humanWaitMs, decisionLatencyMs: jev.decisionLatencyMs, outcome: jev.outcome, decisions: jev.decisions, inputTokens: jev.inputTokens, costUsd: jev.costUsd },
+        jev: jev && { id: jev.id, durationMs: jev.durationMs, humanWaitMs: jev.humanWaitMs, decisionLatencyMs: jev.decisionLatencyMs, outcome: jev.outcome, decisions: jev.decisions, inputTokens: jev.inputTokens, outputTokens: jev.outputTokens, costUsd: jev.costUsd },
         codex: codex && { durationMs: codex.durationMs, outcome: codex.outcome, costUsd: codex.costUsd },
         speedRatio: jev && codex && jev.outcome === "complete" && codex.outcome === "complete" ? Number((codex.durationMs / jev.durationMs).toFixed(2)) : null,
       }));
