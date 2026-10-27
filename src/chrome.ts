@@ -31,7 +31,8 @@ export class ChromeSession {
       await this.pages();
     } catch (error) {
       await this.close();
-      throw new Error("Could not connect to your running Chrome. Open chrome://inspect/#remote-debugging in Chrome, enable remote debugging, then allow Chrome's connection prompt.", { cause: error });
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Could not connect to your running Chrome. Check chrome://inspect/#remote-debugging and Chrome's connection prompt. Chrome DevTools reported: ${detail}`, { cause: error });
     }
   }
 

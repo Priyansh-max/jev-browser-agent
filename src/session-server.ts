@@ -129,7 +129,7 @@ const server = createServer(async (req, res) => {
       json(res, 200, { connection, connectionError, connectionMs, expiresAt: new Date(expiresAt).toISOString(), activeRun: run?.status === "running" ? run.id : null });
     } else if (req.method === "POST" && url.pathname === "/connect") {
       if (run?.status === "running" || connection === "connecting") json(res, 409, { error: "Session is busy." });
-      else { await connect(); json(res, connection === "ready" ? 200 : 503, { connection, connectionError }); }
+      else { await connect(); json(res, connection === "ready" ? 200 : 503, { connection, connectionError, ...(connection === "error" ? { error: connectionError } : {}) }); }
     } else if (req.method === "GET" && url.pathname === "/tabs") {
       if (connection !== "ready") { json(res, 503, { error: connectionError || "Chrome is connecting." }); return; }
       const pages = await chrome.pages();

@@ -16,15 +16,15 @@ async function sessionFile(): Promise<SessionFile | undefined> {
   }
 }
 
-async function request<T>(session: SessionFile, path: string, method = "GET", data?: unknown): Promise<T> {
+async function request<T>(session: SessionFile, path: string, method = "GET", data?: unknown, timeoutMs = 10_000): Promise<T> {
   const response = await fetch(`http://127.0.0.1:${session.port}${path}`, {
     method,
     headers: { Authorization: `Bearer ${session.token}`, ...(data === undefined ? {} : { "Content-Type": "application/json" }) },
     ...(data === undefined ? {} : { body: JSON.stringify(data) }),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
-  const result = await response.json() as T & { error?: string };
-  if (!response.ok) throw new Error(result.error ?? `Session HTTP ${response.status}`);
+  const result = await response.json() as T & { error?: string; connectionError?: string };
+  if (!response.ok) throw new Error(result.error ?? result.connectionError ?? `Session HTTP ${response.status}`);
   return result;
 }
 
@@ -34,7 +34,10 @@ async function readySession(): Promise<SessionFile> {
     try {
       const health = await request<Health>(existing, "/health");
       if (health.connection === "ready") return existing;
-      if (health.connection === "error") throw new Error(health.connectionError);
+      if (health.connection === "error") {
+        await request(existing, "/connect", "POST", undefined, 60_000);
+        return existing;
+      }
     } catch (error) {
       if (error instanceof Error && !/fetch failed|ECONNREFUSED|ETIMEDOUT/.test(error.message)) throw error;
       await rm(sessionPath, { force: true });
@@ -145,7 +148,7 @@ async function main(): Promise<void> {
   } else if (command === "reconnect") {
     const session = await sessionFile();
     if (!session) throw new Error("No session to reconnect.");
-    console.log(await request(session, "/connect", "POST"));
+    console.log(await request(session, "/connect", "POST", undefined, 60_000));
   } else if (command === "stop") {
     const session = await sessionFile();
     if (!session) return;
