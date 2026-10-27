@@ -1,0 +1,25 @@
+{
+  "name": "jev-browser-agent",
+  "version": "0.1.0",
+  "description": "JEV-only browser agent for an existing Chrome session",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "start": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "chrome-devtools-mcp": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}
